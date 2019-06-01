@@ -46,11 +46,9 @@ class ActorCritic(nn.Module):
     def evaluate(self, state, action):
         action_mean = self.actor(state)
         dist = MultivariateNormal(torch.squeeze(action_mean), torch.diag(self.action_var))
-
         action_logprobs = dist.log_prob(torch.squeeze(action))
         dist_entropy = dist.entropy()
         state_value = self.critic(state)
-
         return action_logprobs, torch.squeeze(state_value), dist_entropy
 
 
