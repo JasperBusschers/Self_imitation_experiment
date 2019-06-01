@@ -8,8 +8,12 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def train(args):
     # creating environment
     env = gym.make(args.env_name)
-    state_dim = env.observation_space.shape[0]
-    action_dim = env.action_space.shape[0]
+    if args.continious:
+        state_dim = env.observation_space.shape[0]
+        action_dim = env.action_space.shape[0]
+    else:
+        state_dim =env.observation_space.shape[0]
+        action_dim = env.action_space.n#env.action_space
 
     if args.random_seed:
         print("Random Seed: {}".format(args.random_seed))
@@ -20,14 +24,16 @@ def train(args):
     pol = a2c(state_dim,action_dim,args)
 
     # logging variables
-    running_reward = 0
-    avg_length = 0
-    time_step = 0
 
+
+    rewards =[]
+    lengths = []
     # training loop
     for i_episode in range(1, args.max_episodes + 1):
+        running_reward = 0
         state = env.reset()
         done = False
+        time_step = 0
         while not done:
             time_step += 1
             # Running policy_old:
@@ -36,10 +42,14 @@ def train(args):
             # Saving reward:
             pol.policy.rewards.append(reward)
             state = next_state
+            rewards.append(reward)
+
             running_reward += reward
             if args.render:
                 env.render()
             if done:
+                lengths.append(time_step)
+                rewards.append(running_reward)
                 break
         pol.update()
         if args.SIL:
@@ -51,9 +61,10 @@ def train(args):
             break
         # logging
         if i_episode % args.log_interval == 0:
-            avg_length = int(time_step /i_episode)
-            running_reward = int((running_reward / args.log_interval))
+            avg_length = np.mean(np.asarray(lengths))
+            avg_rewards = np.mean(np.asarray(rewards))
 
-            print('Episode {} \t Avg length: {} \t Avg reward: {}'.format(i_episode, avg_length, running_reward))
-            running_reward = 0
+            print('Episode {} \t Avg length: {} \t Avg reward: {}'.format(i_episode, avg_length, avg_rewards))
+            rewards = []
+            lengths = []
 

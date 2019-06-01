@@ -16,8 +16,7 @@ class ActorCritic(nn.Module):
             nn.Tanh(),
             nn.Linear(n_var, n_var),
             nn.Tanh(),
-            nn.Linear(n_var, action_dim),
-            nn.Tanh()
+            nn.Linear(n_var, action_dim)
         )
 
         self.critic = nn.Sequential(
@@ -43,13 +42,13 @@ class ActorCritic(nn.Module):
         if self.continious:
             action = self.forward_continious(state_value,action_feats)
         else:
-            action=  self.forward_discrete(state)
+            action=  self.forward_discrete(state_value,action_feats)
         self.actions.append(action)
         return action
 
     def forward_discrete(self, state_value,action_feats):
 
-        action_probs = F.softmax(action_feats, dim=0)
+        action_probs = F.softmax(action_feats, dim=1)
         action_distribution = Categorical(action_probs)
         action = action_distribution.sample()
         self.logprobs.append(action_distribution.log_prob(action))
@@ -73,7 +72,7 @@ class ActorCritic(nn.Module):
             action_logprobs = dist.log_prob(torch.squeeze(action))
             dist_entropy = dist.entropy()
         else:
-            action_probs = F.softmax(action_feats, dim=0)
+            action_probs = F.softmax(action_feats, dim=1)
             dist  = Categorical(action_probs)
             action_logprobs = dist.log_prob(torch.squeeze(action))
             dist_entropy = dist.entropy()

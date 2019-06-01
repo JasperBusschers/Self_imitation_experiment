@@ -3,8 +3,8 @@ import argparse
 
 def arguments():
     parse = argparse.ArgumentParser()
-    parse.add_argument('--env_name', type=str, default='LunarLanderContinuous-v2', help='the environment name')
-    parse.add_argument('--continious', default=True, action='store_false', help='continious environment')
+    parse.add_argument('--env_name', type=str, default='LunarLander-v2', help='the environment name')
+    parse.add_argument('--continious', default=False, action='store_false', help='continious environment')
     parse.add_argument('--solved_reward', type=int, default=200, help='reward for solving environment')
     parse.add_argument('--log_interval', type=int, default=20,help='log every n episodes')
     parse.add_argument('--max_episodes', type=int, default=50000,help='maximum number of episodes')
