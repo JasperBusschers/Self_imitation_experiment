@@ -25,7 +25,9 @@ def train(args):
 
     # logging variables
 
+    HISTORY = []
 
+    average_cumulative_reward = 0.0
     rewards =[]
     lengths = []
     # training loop
@@ -42,7 +44,6 @@ def train(args):
             # Saving reward:
             pol.policy.rewards.append(reward)
             state = next_state
-            rewards.append(reward)
 
             running_reward += reward
             if args.render:
@@ -52,10 +53,13 @@ def train(args):
                 rewards.append(running_reward)
                 break
         pol.update()
+        average_cumulative_reward *= 0.95
+        average_cumulative_reward += 0.05 * running_reward
+        HISTORY.append(average_cumulative_reward)
         if args.SIL:
             pol.update_off_policy()
         # # stop training if avg_reward > solved_reward
-        if running_reward > (args.log_interval * args.solved_reward):
+        if average_cumulative_reward > env.spec.reward_threshold:
             print("########## Solved! ##########")
             torch.save(pol.policy.state_dict(), './PPO_Continuous_{}.pth'.format(args.env_name))
             break
@@ -68,3 +72,4 @@ def train(args):
             rewards = []
             lengths = []
 
+    return HISTORY, pol.policy.state_dict()

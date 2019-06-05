@@ -1,5 +1,7 @@
 from train import train
 import argparse
+import numpy as np
+import torch
 
 def arguments():
     parse = argparse.ArgumentParser()
@@ -32,4 +34,11 @@ def arguments():
 
     return args
 
-train(arguments())
+
+args = arguments()
+average_cum_reward , weights = train(args)
+prefix =  'results/' + args.env_name + '-a2c'
+name = prefix+ '-cumulative-rewards.npy'
+name_model = prefix+'.pth'
+np.save(name, average_cum_reward)
+torch.save(weights, name_model)
