@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch.distributions import MultivariateNormal, Categorical
 import numpy as np
+
+from discriminator_module import discriminator_module
 from sil_module import sil_module
 import torch.nn.functional as F
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -47,7 +49,6 @@ class ActorCritic(nn.Module):
         return action
 
     def forward_discrete(self, state_value,action_feats):
-
         action_probs = F.softmax(action_feats, dim=1)
         action_distribution = Categorical(action_probs)
         action = action_distribution.sample()
@@ -101,13 +102,17 @@ class a2c:
         self.optimizer = torch.optim.Adam(self.policy.parameters(),
                                           lr=args.lr, betas=(0.9,0.999))
         self.sil_model = sil_module(self.policy,self.optimizer,args)
-
+        if args.disc:
+            self.discriminator = discriminator_module(state_dim,action_dim,args)
 
     def select_action(self, state):
         return self.policy(np.asarray([state]))
 
     def update(self):
         returns ,dis_reward= self.calc_discounted_reward()
+        if self.args.disc:
+            returns2 = self.discriminator.reward_dis(self.policy.states, self.policy.actions).detach().view(-1)
+
         for _ in range(self.args.K_epochs):
             self.optimizer.zero_grad()
             loss = self.policy.calculateLoss(returns)
@@ -116,8 +121,11 @@ class a2c:
         sample = {'states': np.asarray(self.policy.states),
                   'actions': np.asarray(self.policy.actions),
                   'rewards': returns.cpu().numpy()}#self.policy.rewards)}
-        if self.args.SIL:
+        if self.args.SIL or self.args.disc:
             self.sil_model.good_buffer.add(sample,dis_reward)
+        if self.args.disc:
+            loss_disc =self.discriminator.train_discriminator(self.policy.states,self.policy.actions, self.sil_model.good_buffer)
+            print(loss_disc)
         self.policy.clearMemory()
 
     def update_off_policy(self):
@@ -125,12 +133,16 @@ class a2c:
 
     def calc_discounted_reward(self):
         # calculating discounted rewards:
+        if self.args.disc:
+            disc_rewards = self.discriminator.reward_dis(self.policy.states, self.policy.actions).detach()
+        else:
+            disc_rewards = [0 for _ in self.policy.rewards[::-1]]
         rewards = []
         dis_reward = 0
-        for reward in self.policy.rewards[::-1]:
-            dis_reward = reward + self.args.gamma * dis_reward
+        for reward, disc_r in zip(self.policy.rewards[::-1], disc_rewards):
+            dis_reward = self.args.weight_environment_reward * reward + self.args.weight_disc * disc_r+ self.args.gamma * dis_reward
             rewards.insert(0, dis_reward)
         # normalizing the rewards:
         rewards = torch.tensor(rewards).to(device)
-        rewards = (rewards - rewards.mean()) / (rewards.std())
+        #rewards = (rewards - rewards.mean()) / (rewards.std())
         return rewards, dis_reward

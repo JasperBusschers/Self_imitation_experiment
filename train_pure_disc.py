@@ -8,7 +8,7 @@ from util import plot_reward
 
 def arguments():
     parse = argparse.ArgumentParser()
-    parse.add_argument('--env_name', type=str, default='CartPole-v0', help='the environment name')
+    parse.add_argument('--env_name', type=str, default='LunarLander-v2', help='the environment name')
     parse.add_argument('--continious', default=False, action='store_false', help='continious environment')
     parse.add_argument('--solved_reward', type=int, default=200, help='reward for solving environment')
     parse.add_argument('--log_interval', type=int, default=20,help='log every n episodes')
@@ -23,9 +23,9 @@ def arguments():
     parse.add_argument('--K_epochs_sil', type=int, default=1, help='number of updates sil')
     parse.add_argument('--SIL',default=False, action='store_false', help='check if use the sil')
     parse.add_argument('--render', default=False,action='store_false', help='check if use the sil')
-    parse.add_argument('--disc',default=False, action='store_false', help='check if use the discriminator')
-    parse.add_argument('--weight_disc', type=float, default=0, help='buffer capacity')
-    parse.add_argument('--weight_environment_reward', type=float, default=1, help='buffer capacity')
+    parse.add_argument('--disc',default=True, action='store_false', help='check if use the discriminator')
+    parse.add_argument('--weight_disc', type=float, default=1, help='buffer capacity')
+    parse.add_argument('--weight_environment_reward', type=float, default=0, help='buffer capacity')
 
     # SIL PARAMETERS
     parse.add_argument('--batch_size', type=int, default=512, help='the batch size to update the sil module')
@@ -43,7 +43,7 @@ def arguments():
 
 args = arguments()
 average_cum_reward , weights = train(args)
-algo =  args.env_name +'-a2c'
+algo =  args.env_name +'-pure_discriminator'
 prefix =  'results/' + algo
 name = prefix+ '-cumulative-rewards.npy'
 name_model = prefix+'.pth'
