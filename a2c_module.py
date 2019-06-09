@@ -102,6 +102,7 @@ class a2c:
                                           lr=args.lr, betas=(0.9,0.999))
         self.sil_model = sil_module(self.policy,self.optimizer,args)
 
+
     def select_action(self, state):
         return self.policy(np.asarray([state]))
 
@@ -114,7 +115,7 @@ class a2c:
             self.optimizer.step()
         sample = {'states': np.asarray(self.policy.states),
                   'actions': np.asarray(self.policy.actions),
-                  'rewards': np.asarray(self.policy.rewards)}
+                  'rewards': returns.cpu().numpy()}#self.policy.rewards)}
         if self.args.SIL:
             self.sil_model.good_buffer.add(sample,dis_reward)
         self.policy.clearMemory()

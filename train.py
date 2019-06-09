@@ -61,14 +61,12 @@ def train(args):
         # # stop training if avg_reward > solved_reward
         if average_cumulative_reward > env.spec.reward_threshold:
             print("########## Solved! ##########")
-            torch.save(pol.policy.state_dict(), './PPO_Continuous_{}.pth'.format(args.env_name))
             break
         # logging
         if i_episode % args.log_interval == 0:
             avg_length = np.mean(np.asarray(lengths))
             avg_rewards = np.mean(np.asarray(rewards))
-
-            print('Episode {} \t Avg length: {} \t Avg reward: {}'.format(i_episode, avg_length, avg_rewards))
+            print('Episode {} \t Avg length: {} \t Avg reward: {}'.format(i_episode, avg_length, average_cumulative_reward))
             rewards = []
             lengths = []
 

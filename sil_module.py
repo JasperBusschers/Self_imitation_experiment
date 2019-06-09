@@ -16,14 +16,7 @@ class sil_module:
         self.total_rewards = []
         self.good_buffer = PriorityQueueSet(args.capacity)
 
-    # add the batch information into it...
-    def step(self, obs, actions, rewards, dones):
-        self.running_episodes.append([obs, actions, rewards])
-        # to see if can update the episode...
-        if dones:
-                self.update_buffer(self.running_episodes)
-                self.running_episodes = []
-    
+
     # train the sil model...
     def train_sil_model(self):
         for n in range(self.args.K_epochs_sil):
@@ -33,16 +26,10 @@ class sil_module:
             returns =  best_sample['rewards']
             mean_adv, num_valid_samples = 0, 0
             if obs is not None:
-                # need to get the masks
-                # get basic information of network..
-                #obs = torch.tensor(obs, dtype=torch.float32)
-                #actions = torch.tensor(actions, dtype=torch.float32).unsqueeze(1)
                 returns = torch.tensor(returns, dtype=torch.float32).unsqueeze(1).to(device)
                 max_nlogp = torch.tensor(np.ones((len(actions), 1)) * 0.5, dtype=torch.float32).to(device)
-
                 # start to next...
                 action_log_probs, value, dist_entropy = self.network.evaluate(obs,actions)
-                #action_log_probs, dist_entropy = evaluate_actions_sil(pi, actions)
                 action_log_probs = -action_log_probs
                 clipped_nlogp = torch.min(action_log_probs, max_nlogp)
                 # process returns
