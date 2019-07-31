@@ -15,12 +15,26 @@ class Discriminator(nn.Module):
             self.action_dim =action_dim
         n_latent_var = args.n_latent_var
         self.fc = nn.Sequential(
-            nn.Linear(state_dim +  self.action_dim, n_latent_var),
-            nn.Tanh(),
-            nn.Linear(n_latent_var, n_latent_var),
+            #nn.Linear(state_dim +  self.action_dim, n_latent_var),
+            #nn.Tanh(),
+            nn.Linear(n_latent_var*2, n_latent_var),
             nn.Tanh(),
             nn.Linear(n_latent_var, 1),
             nn.Sigmoid()
+        )
+
+        self.action_feature = nn.Sequential(
+            nn.Linear(action_dim, n_latent_var),
+            nn.Tanh(),
+            nn.Linear(n_latent_var, n_latent_var),
+            nn.Tanh(),
+        )
+
+        self.state_feature = nn.Sequential(
+            nn.Linear(state_dim, n_latent_var),
+            nn.Tanh(),
+            nn.Linear(n_latent_var, n_latent_var),
+            nn.Tanh(),
         )
 
     def forward(self, obs, actions):
@@ -30,7 +44,9 @@ class Discriminator(nn.Module):
             actions_onehot.zero_()
             actions_onehot.scatter_(1, actions.long(), 1)
             actions = actions_onehot
-        h = torch.cat((actions.float(), obs.float()), 1)
+        actions = self.action_feature(actions.float())
+        obs = self.state_feature(obs.float())
+        h = torch.cat((actions, obs), 1)
         h = self.fc(h)
         return h
 
@@ -45,12 +61,17 @@ class discriminator_module:
 
     def reward_dis(self, s, a):
         s,a = torch.tensor(s).to(device),torch.tensor(a).to(device)
-        d_reward = self.discriminator(s, a)#+ torch.log(1 - self.discriminator(s, a))
-        return d_reward
+        d_reward =torch.log(self.discriminator(s, a)) - torch.log(1 - self.discriminator(s, a))
+        #b_size = s.size(0)
+        #label = torch.full((b_size,), 0, device=device)
+        #output = self.discriminator(s, a).view(-1)
+        #errD_fake = self.criterion(output, label)
+        return d_reward.view(-1)
 
     def train_discriminator(self, states,actions,buffer):
         if buffer.counter != 0:
-            for best_samples in buffer.get_batches():
+            for best_samples in range(5):#buffer.get_batches():
+                best_samples = buffer.sample()
                 sampled_obs = torch.tensor(states).to(device).detach()
                 sampled_action = torch.tensor(actions).to(device).detach()
                 best_sampled_obs =torch.tensor(best_samples['states']).to(device).detach()

@@ -110,9 +110,6 @@ class a2c:
 
     def update(self):
         returns ,dis_reward= self.calc_discounted_reward()
-        if self.args.disc:
-            returns2 = self.discriminator.reward_dis(self.policy.states, self.policy.actions).detach().view(-1)
-
         for _ in range(self.args.K_epochs):
             self.optimizer.zero_grad()
             loss = self.policy.calculateLoss(returns)
@@ -121,8 +118,8 @@ class a2c:
         sample = {'states': np.asarray(self.policy.states),
                   'actions': np.asarray(self.policy.actions),
                   'rewards': returns.cpu().numpy()}#self.policy.rewards)}
-        if self.args.SIL or self.args.disc:
-            self.sil_model.good_buffer.add(sample,dis_reward)
+        #if self.args.SIL or self.args.disc:
+        #    self.sil_model.good_buffer.add(sample,dis_reward)
         if self.args.disc:
             loss_disc =self.discriminator.train_discriminator(self.policy.states,self.policy.actions, self.sil_model.good_buffer)
             print(loss_disc)
@@ -137,12 +134,18 @@ class a2c:
             disc_rewards = self.discriminator.reward_dis(self.policy.states, self.policy.actions).detach()
         else:
             disc_rewards = [0 for _ in self.policy.rewards[::-1]]
+            disc_rewards = torch.Tensor(disc_rewards).to(device)
+        rewards_discriminator = []
+        disc_rew = 0
         rewards = []
-        dis_reward = 0
+        discounted_reward = 0
         for reward, disc_r in zip(self.policy.rewards[::-1], disc_rewards):
-            dis_reward = self.args.weight_environment_reward * reward + self.args.weight_disc * disc_r+ self.args.gamma * dis_reward
-            rewards.insert(0, dis_reward)
+            disc_rew = disc_r+ self.args.gamma * disc_rew
+            discounted_reward =reward + self.args.gamma * discounted_reward
+            rewards.insert(0, discounted_reward)
+            rewards_discriminator.insert(0, disc_rew)
         # normalizing the rewards:
         rewards = torch.tensor(rewards).to(device)
-        #rewards = (rewards - rewards.mean()) / (rewards.std())
-        return rewards, dis_reward
+        rewards_discriminator = torch.tensor(rewards_discriminator).to(device)
+        rewards =  self.args.weight_environment_reward * ( (rewards - rewards.mean()) / (rewards.std())) + self.args.weight_disc *disc_rewards# ( (rewards_discriminator - rewards_discriminator.mean()))    #( (rewards - rewards.mean()) / (rewards.std()))
+        return rewards, discounted_reward

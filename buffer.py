@@ -23,9 +23,12 @@ class PriorityQueueSet(object):
         for i, d in enumerate(data):
             self.que.put(d)
         return data
+
+
     def sample(self):
         data = self.get_data()
         return random.sample(data,1)[0].samples
+    
     def get_batches(self):
         data = self.get_data()
         result = []

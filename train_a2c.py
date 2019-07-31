@@ -8,11 +8,11 @@ from util import plot_reward
 
 def arguments():
     parse = argparse.ArgumentParser()
-    parse.add_argument('--env_name', type=str, default='CartPole-v0', help='the environment name')
-    parse.add_argument('--continious', default=False, action='store_false', help='continious environment')
-    parse.add_argument('--solved_reward', type=int, default=200, help='reward for solving environment')
+    parse.add_argument('--env_name', type=str, default='RoboschoolAnt-v1', help='the environment name')
+    parse.add_argument('--continious', default=True, action='store_false', help='continious environment')
+    parse.add_argument('--solved_reward', type=int, default=1000000, help='reward for solving environment')
     parse.add_argument('--log_interval', type=int, default=20,help='log every n episodes')
-    parse.add_argument('--max_episodes', type=int, default=50000,help='maximum number of episodes')
+    parse.add_argument('--max_episodes', type=int, default=2000,help='maximum number of episodes')
     parse.add_argument('--n_latent_var', type=int, default=64, help='dimension hidden layer')
     parse.add_argument('--action_std', type=float, default=0.6, help='standard deviation actions')
     parse.add_argument('--lr', type=float, default=0.0025, help='learning rate')

@@ -2,6 +2,7 @@ import torch
 import gym
 import numpy as np
 from a2c_module import a2c
+import roboschool
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
